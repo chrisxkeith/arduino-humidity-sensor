@@ -1,12 +1,9 @@
 /*
   Test humidity sensors.
-  A0 : nothing (baseline)
   A1 : https://www.amazon.com/Digital-Temperature-Humidity-measure-Arduino/dp/B00R4KGG6Q
   A2 : https://www.amazon.com/Digital-Temperature-Humidity-measure-Arduino/dp/B018JO5BRK
 */
 long masterCount = 0;
-long baselineCount = 0;
-long baselineAverage = 0;
 long HT21Count = 0;
 long HT21Average = 0;
 long DHT22Count = 0;
@@ -47,19 +44,11 @@ void log(char* message) {
 // digital pin 2 has a pushbutton attached to it. Give it a name:
 int pushButton = 2;
 
-void handleButton() {
-    int buttonState = digitalRead(pushButton);
-  // print out the state of the button:
-  String s = "";
-  s.concat(buttonState);
-  log(s.c_str());
-}
-
 void setupHumiditySensors() {
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
   pinMode(A2, INPUT);
-  log("masterCount\tbase avg\tHT21 avg\tDHT22 avg");
+  log("masterCount\tHT21 avg\tDHT22 avg");
 }
 
 void setup() {
@@ -67,9 +56,28 @@ void setup() {
 
   // baseline validation that code has loaded and is running.
   pinMode(LED_BUILTIN, OUTPUT);
-  
+
+  // validation that digital input is working. Hold down pushbutton to get digital '1' input.
   pinMode(pushButton, INPUT);
-//  setupHumiditySensors();
+  setupHumiditySensors();
+}
+
+void handleButton() {
+  if (masterCount % 1000 == 0) {
+    int buttonState = digitalRead(pushButton);
+    // print out the state of the button:
+    String s = "Button\t";
+    s.concat(buttonState);
+    log(s.c_str());
+  }
+}
+
+void handlePot() {
+  if (masterCount % 1000 == 0) {
+    String s = "Pot\t";
+    s.concat(analogRead(A0));
+    log(s.c_str());
+  }
 }
 
 void readHumiditySensor(String name, int pin, long* count, long* average) {
@@ -84,30 +92,32 @@ void readHumiditySensor(String name, int pin, long* count, long* average) {
 }
 
 void handleHumiditySensors() {
-  readHumiditySensor("baseline", A0, &baselineCount, &baselineAverage);
   readHumiditySensor("HT21 AM2301", A1, &HT21Count, &HT21Average);
   readHumiditySensor("DHT22 AM2302", A2, &DHT22Count, &DHT22Average);
-  if (masterCount % 100 == 0) {
+  if (masterCount % 1000 == 0) {
     String msg = "";
     msg.concat(masterCount);
-    msg.concat("\t\t");
-    msg.concat(baselineAverage);
     msg.concat("\t\t");
     msg.concat(HT21Average);
     msg.concat("\t\t");
     msg.concat(DHT22Average);
     log(msg.c_str());  
   }
-  masterCount++;
 }
 
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(1000);
+  if (masterCount % 1000 == 0) {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  delay(1);
 
-  handleButton();
-//  handleHumiditySensors();
+//  handleButton();
+//  handlePot();
+  handleHumiditySensors();
 
-  digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  delay(1000);
+  if (masterCount % 2000 == 0) {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+  delay(1);
+  masterCount++;
 }
