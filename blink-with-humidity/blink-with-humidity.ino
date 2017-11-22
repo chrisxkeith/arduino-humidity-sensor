@@ -44,16 +44,32 @@ void log(char* message) {
     Serial.println(logLine);
 }
 
-void setup() {
-  Serial.begin(9600);
-  log("masterCount\tbase avg\tHT21 avg\tDHT22 avg");
+// digital pin 2 has a pushbutton attached to it. Give it a name:
+int pushButton = 2;
 
-  // initialize digital pin LED_BUILTIN as an output.
-  pinMode(LED_BUILTIN, OUTPUT);
-  
+void handleButton() {
+    int buttonState = digitalRead(pushButton);
+  // print out the state of the button:
+  String s = "";
+  s.concat(buttonState);
+  log(s.c_str());
+}
+
+void setupHumiditySensors() {
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
   pinMode(A2, INPUT);
+  log("masterCount\tbase avg\tHT21 avg\tDHT22 avg");
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  // baseline validation that code has loaded and is running.
+  pinMode(LED_BUILTIN, OUTPUT);
+  
+  pinMode(pushButton, INPUT);
+//  setupHumiditySensors();
 }
 
 void readHumiditySensor(String name, int pin, long* count, long* average) {
@@ -67,10 +83,7 @@ void readHumiditySensor(String name, int pin, long* count, long* average) {
   (*count)++;
 }
 
-void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(100);
-  
+void handleHumiditySensors() {
   readHumiditySensor("baseline", A0, &baselineCount, &baselineAverage);
   readHumiditySensor("HT21 AM2301", A1, &HT21Count, &HT21Average);
   readHumiditySensor("DHT22 AM2302", A2, &DHT22Count, &DHT22Average);
@@ -86,6 +99,15 @@ void loop() {
     log(msg.c_str());  
   }
   masterCount++;
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(1000);
+
+  handleButton();
+//  handleHumiditySensors();
+
   digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  delay(100);
+  delay(1000);
 }
