@@ -1,132 +1,50 @@
  /*
   Test humidity sensors.
-  A1 : https://www.amazon.com/Digital-Temperature-Humidity-measure-Arduino/dp/B00R4KGG6Q
-  A2 : https://www.amazon.com/Digital-Temperature-Humidity-measure-Arduino/dp/B018JO5BRK
+  D2 : https://www.amazon.com/Digital-Temperature-Humidity-measure-Arduino/dp/B00R4KGG6Q
+  D7 : https://www.amazon.com/Digital-Temperature-Humidity-measure-Arduino/dp/B018JO5BRK
   https://www.elecrow.com/wiki/index.php?title=Temperature_%26_Humidity_Sensor
   - library (.h/.cpp) in ~/Documents/Arduino/libraries/Humidity_Temperature_Sensor
   - ino in ~/Documents/Github/arduino-humidity-sensor/blink-with-humidity
 */
 
-/*
-long masterCount = 0;
-long HT21Count = 0;
-long HT21Average = 0;
-long DHT22Count = 0;
-long DHT22Average = 0;
-
-unsigned long minSecToMillis(unsigned long minutes, unsigned long seconds) {
-  return (minutes * 60 * 1000) + (seconds * 1000);
-}
-
-const long MAX_LONG = 2147483647;
-const unsigned long MAX_UNSIGNED_LONG = 4294967295;
-const unsigned int MAX_MESSAGE_SIZE = 96;
-char gMessage[MAX_MESSAGE_SIZE] = "";
-unsigned long previousLogTime = MAX_UNSIGNED_LONG;
-
-char* toFormattedInterval(unsigned long i) {
-  unsigned long hours = i / minSecToMillis(60, 0);
-  unsigned long remainder = i % minSecToMillis(60, 0);
-  unsigned long minutes = remainder / minSecToMillis(1, 0);
-  remainder = remainder % minSecToMillis(1, 0);
-  unsigned long seconds = remainder / minSecToMillis(0, 1);
-  snprintf(gMessage, MAX_MESSAGE_SIZE, "%02i:%02i:%02i", (int)hours, (int)minutes, (int)seconds);
-  return gMessage;
-}
-
-char logLine[MAX_MESSAGE_SIZE];
-void log(char* message) {
-    unsigned long logInterval = 0;
-    if (previousLogTime != MAX_UNSIGNED_LONG) {
-      logInterval = (millis() - previousLogTime) / 1000;
-    }
-    previousLogTime = millis();
-    snprintf(logLine, MAX_MESSAGE_SIZE, "%s\t%s",
-            toFormattedInterval(previousLogTime), message);
-    Serial.println(logLine);
-}
-
-// digital pin 2 has a pushbutton attached to it. Give it a name:
-int pushButton = 2;
-
-void setupHumiditySensors() {
-  pinMode(A0, INPUT);
-  pinMode(A1, INPUT);
-  pinMode(A2, INPUT);
-  log("masterCount\tHT21 avg\tDHT22 avg");
-}
-
-void setup() {
-  Serial.begin(9600);
-
-  // baseline validation that code has loaded and is running.
-  pinMode(LED_BUILTIN, OUTPUT);
-
-  // validation that digital input is working. Hold down pushbutton to get digital '1' input.
-  pinMode(pushButton, INPUT);
-  setupHumiditySensors();
-}
-
-void handleButton() {
-  if (masterCount % 1000 == 0) {
-    int buttonState = digitalRead(pushButton);
-    // print out the state of the button:
-    String s = "Button\t";
-    s.concat(buttonState);
-    log(s.c_str());
+#ifdef PARTICLE_H
+  void log(char* message) {
+    Particle.publish("", message, 1, PRIVATE);
   }
-}
-
-void handlePot() {
-  if (masterCount % 1000 == 0) {
-    String s = "Pot\t";
-    s.concat(analogRead(A0));
-    log(s.c_str());
+#else
+  unsigned long minSecToMillis(unsigned long minutes, unsigned long seconds) {
+    return (minutes * 60 * 1000) + (seconds * 1000);
   }
-}
 
-void readHumiditySensor(String name, int pin, long* count, long* average) {
-  // Wraps around to negative at 32K
-  long val = analogRead(pin);
-  if ((*average) * (*count) + val < 0) {
-    (*count) = 0;
-    (*average) = 0;
+  const long MAX_LONG = 2147483647;
+  const unsigned long MAX_UNSIGNED_LONG = 4294967295;
+  const unsigned int MAX_MESSAGE_SIZE = 96;
+  char gMessage[MAX_MESSAGE_SIZE] = "";
+  unsigned long previousLogTime = MAX_UNSIGNED_LONG;
+
+  char* toFormattedInterval(unsigned long i) {
+    unsigned long hours = i / minSecToMillis(60, 0);
+    unsigned long remainder = i % minSecToMillis(60, 0);
+    unsigned long minutes = remainder / minSecToMillis(1, 0);
+    remainder = remainder % minSecToMillis(1, 0);
+    unsigned long seconds = remainder / minSecToMillis(0, 1);
+    snprintf(gMessage, MAX_MESSAGE_SIZE, "%02i:%02i:%02i", (int)hours, (int)minutes, (int)seconds);
+    return gMessage;
   }
-  (*average) = (((*average) * (*count)) + val) / (*count + 1);
-  (*count)++;
-}
 
-void handleHumiditySensors() {
-  readHumiditySensor("HT21 AM2301", A1, &HT21Count, &HT21Average);
-  readHumiditySensor("DHT22 AM2302", A2, &DHT22Count, &DHT22Average);
-  if (masterCount % 1000 == 0) {
-    String msg = "";
-    msg.concat(masterCount);
-    msg.concat("\t\t");
-    msg.concat(HT21Average);
-    msg.concat("\t\t");
-    msg.concat(DHT22Average);
-    log(msg.c_str());  
+  char logLine[MAX_MESSAGE_SIZE];
+  void log(char* message) {
+      unsigned long logInterval = 0;
+      if (previousLogTime != MAX_UNSIGNED_LONG) {
+        logInterval = (millis() - previousLogTime) / 1000;
+      }
+      previousLogTime = millis();
+      snprintf(logLine, MAX_MESSAGE_SIZE, "%s\t%s",
+              toFormattedInterval(previousLogTime), message);
+      Serial.println(logLine);
   }
-}
+#endif
 
-void loop() {
-  if (masterCount % 1000 == 0) {
-    digitalWrite(LED_BUILTIN, HIGH);
-  }
-  delay(1);
-
-//  handleButton();
-//  handlePot();
-  handleHumiditySensors();
-
-  if (masterCount % 2000 == 0) {
-    digitalWrite(LED_BUILTIN, LOW);
-  }
-  delay(1);
-  masterCount++;
-}
-*/
 #include "DHT.h"
 
 #define DHTPIN 2     // what pin we're connected to
@@ -141,30 +59,53 @@ void loop() {
 // Connect pin 4 (on the right) of the sensor to GROUND
 // Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
 
-DHT dht(DHTPIN, DHTTYPE);
+DHT dht1(2, DHT21);
+float dht1_h = -1.0e-100;
+float dht1_t = -1.0e-100;
+
+DHT dht2(7, DHT22);
+float dht2_h = -1.0e-100;
+float dht2_t = -1.0e-100;
 
 void setup() {
-  Serial.begin(9600); 
-  Serial.println("DHTxx test!");
- 
-  dht.begin();
+  Serial.begin(9600);
+  dht1.begin();
+  dht2.begin();
+}
+
+bool hasDelta(float a, float b, float delta) {
+  return (abs(a - b) > delta);
+}
+
+void readSensor(float* prev_h, float* prev_t, float h, float t, char* sensor_name) {
+  // check if returns are valid, if they are NaN (not a number) then something went wrong!
+  String s = sensor_name;
+  s.concat("\t");
+  if (isnan(t)) {
+    s.concat("Failed to read temperature");
+    log(s.c_str());
+  } else if (isnan(h)) {
+    s.concat("Failed to read humidity");
+    log(s.c_str());
+  } else {
+    if (hasDelta(*prev_t, t, 0.5) || hasDelta(*prev_h, h, 0.5)) {
+      s.concat("Humidity: ");
+      s.concat(h);
+      s.concat(" %\t");
+      s.concat("Temperature: ");
+      s.concat(t);
+      s.concat(" *C");
+      log(s.c_str());
+      *prev_t = t;
+      *prev_h = h;
+    }
+  }
 }
 
 void loop() {
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-
-  // check if returns are valid, if they are NaN (not a number) then something went wrong!
-  if (isnan(t) || isnan(h)) {
-    Serial.println("Failed to read from DHT");
-  } else {
-    Serial.print("Humidity: "); 
-    Serial.print(h);
-    Serial.print(" %\t");
-    Serial.print("Temperature: "); 
-    Serial.print(t);
-    Serial.println(" *C");
-  }
+  readSensor(&dht1_h, &dht1_t, dht1.readHumidity(), dht1.readTemperature(), "Smakn DHT21 AM2301");
+  readSensor(&dht2_h, &dht2_t, dht2.readHumidity(), dht2.readTemperature(), "SMAKN DHT22 AM2302");
 }
+
