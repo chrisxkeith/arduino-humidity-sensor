@@ -3,21 +3,56 @@
   D2 : https://www.amazon.com/Digital-Temperature-Humidity-measure-Arduino/dp/B00R4KGG6Q
   D7 : https://www.amazon.com/Digital-Temperature-Humidity-measure-Arduino/dp/B018JO5BRK
   https://www.elecrow.com/wiki/index.php?title=Temperature_%26_Humidity_Sensor
-  - library (.h/.cpp) in ~/Documents/Arduino/libraries/Humidity_Temperature_Sensor
+  - NOPE, brute force include for now : library (.h/.cpp) in ~/Documents/Arduino/libraries/Humidity_Temperature_Sensor
   - ino in ~/Documents/Github/arduino-humidity-sensor/blink-with-humidity
-*/
-
- /*
-  https://www.elecrow.com/wiki/index.php?title=Temperature_%26_Humidity_Sensor
 */
 
 // #define PARTICLE
 
-#ifdef PARTICLE
 #if ARDUINO >= 100
  #include "Arduino.h"
 #else
  #include "WProgram.h"
+#endif
+
+#ifdef PARTICLE
+void log(const char* message) {
+    Particle.publish("", message, 1, PRIVATE);
+}
+#else
+
+  unsigned long minSecToMillis(unsigned long minutes, unsigned long seconds) {
+    return (minutes * 60 * 1000) + (seconds * 1000);
+  }
+
+  const long MAX_LONG = 2147483647;
+  const unsigned long MAX_UNSIGNED_LONG = 4294967295;
+  const unsigned int MAX_MESSAGE_SIZE = 96;
+  char gMessage[MAX_MESSAGE_SIZE] = "";
+  unsigned long previousLogTime = MAX_UNSIGNED_LONG;
+
+  char* toFormattedInterval(unsigned long i) {
+    unsigned long hours = i / minSecToMillis(60, 0);
+    unsigned long remainder = i % minSecToMillis(60, 0);
+    unsigned long minutes = remainder / minSecToMillis(1, 0);
+    remainder = remainder % minSecToMillis(1, 0);
+    unsigned long seconds = remainder / minSecToMillis(0, 1);
+    snprintf(gMessage, MAX_MESSAGE_SIZE, "%02i:%02i:%02i", (int)hours, (int)minutes, (int)seconds);
+    return gMessage;
+  }
+
+  char logLine[MAX_MESSAGE_SIZE];
+  
+  void log(char* message) {
+      unsigned long logInterval = 0;
+      if (previousLogTime != MAX_UNSIGNED_LONG) {
+        logInterval = (millis() - previousLogTime) / 1000;
+      }
+      previousLogTime = millis();
+      snprintf(logLine, MAX_MESSAGE_SIZE, "%s\t%s",
+              toFormattedInterval(previousLogTime), message);
+      Serial.println(logLine);
+  }
 #endif
 
 /* DHT library
@@ -205,52 +240,12 @@ boolean DHT::read(void) {
 
 }
 
-void log(const char* message) {
-    Particle.publish("", message, 1, PRIVATE);
-}
-#else
-#include "DHT.h"
-
 #define DHTPIN 2     // what pin we're connected to
 
 // Uncomment whatever type you're using!
 //#define DHTTYPE DHT11   // DHT 11
 //#define DHTTYPE DHT22   // DHT 22  (AM2302)
 #define DHTTYPE DHT21   // DHT 21 (AM2301)
-
-  unsigned long minSecToMillis(unsigned long minutes, unsigned long seconds) {
-    return (minutes * 60 * 1000) + (seconds * 1000);
-  }
-
-  const long MAX_LONG = 2147483647;
-  const unsigned long MAX_UNSIGNED_LONG = 4294967295;
-  const unsigned int MAX_MESSAGE_SIZE = 96;
-  char gMessage[MAX_MESSAGE_SIZE] = "";
-  unsigned long previousLogTime = MAX_UNSIGNED_LONG;
-
-  char* toFormattedInterval(unsigned long i) {
-    unsigned long hours = i / minSecToMillis(60, 0);
-    unsigned long remainder = i % minSecToMillis(60, 0);
-    unsigned long minutes = remainder / minSecToMillis(1, 0);
-    remainder = remainder % minSecToMillis(1, 0);
-    unsigned long seconds = remainder / minSecToMillis(0, 1);
-    snprintf(gMessage, MAX_MESSAGE_SIZE, "%02i:%02i:%02i", (int)hours, (int)minutes, (int)seconds);
-    return gMessage;
-  }
-
-  char logLine[MAX_MESSAGE_SIZE];
-  void log(char* message) {
-      unsigned long logInterval = 0;
-      if (previousLogTime != MAX_UNSIGNED_LONG) {
-        logInterval = (millis() - previousLogTime) / 1000;
-      }
-      previousLogTime = millis();
-      snprintf(logLine, MAX_MESSAGE_SIZE, "%s\t%s",
-              toFormattedInterval(previousLogTime), message);
-      Serial.println(logLine);
-  }
-#endif
-
 
 // Connect pin 1 (on the left) of the sensor to +5V
 // Connect pin 2 of the sensor to whatever your DHTPIN is
