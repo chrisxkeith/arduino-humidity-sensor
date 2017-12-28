@@ -43,7 +43,7 @@ void log(const char* message) {
 
   char logLine[MAX_MESSAGE_SIZE];
   
-  void log(char* message) {
+  void log(const char* message) {
       unsigned long logInterval = 0;
       if (previousLogTime != MAX_UNSIGNED_LONG) {
         logInterval = (millis() - previousLogTime) / 1000;
@@ -126,7 +126,6 @@ float DHT::readTemperature(bool S) {
       return f;
     }
   }
-  Serial.print("Read fail");
   return NAN;
 }
 
@@ -150,7 +149,6 @@ float DHT::readHumidity(void) {
       return f;
     }
   }
-  Serial.print("Read fail");
   return NAN;
 }
 
@@ -253,12 +251,12 @@ boolean DHT::read(void) {
 // Connect a 10K resistor from pin 2 (data) to pin 1 (power) of the sensor
 
 DHT dht1(2, DHT21);
-float dht1_h = -1.0e-100;
-float dht1_t = -1.0e-100;
+float dht1_h = -2000.0;
+float dht1_t = -2000.0;
 
 DHT dht2(7, DHT22);
-float dht2_h = -1.0e-100;
-float dht2_t = -1.0e-100;
+float dht2_h = -2000.0;
+float dht2_t = -2000.0;
 
 void setup() {
   Serial.begin(9600);
@@ -267,38 +265,62 @@ void setup() {
 }
 
 bool hasDelta(float a, float b, float delta) {
+  if (isnan(a) && !isnan(b)) {
+    return true;
+  }
+  if (!isnan(a) && isnan(b)) {
+    return true;
+  }
   return (abs(a - b) > delta);
 }
 
-void readSensor(float* prev_h, float* prev_t, float h, float t, char* sensor_name) {
-  // check if returns are valid, if they are NaN (not a number) then something went wrong!
+String buildString(String sensor_name, float h, float t) {
   String s = sensor_name;
   s.concat("\t");
-  if (isnan(t)) {
-    s.concat("Failed to read temperature");
-    log(s.c_str());
-  } else if (isnan(h)) {
-    s.concat("Failed to read humidity");
-    log(s.c_str());
-  } else {
-    if (hasDelta(*prev_t, t, 0.5) || hasDelta(*prev_h, h, 0.5)) {
-      s.concat("Humidity: ");
-      s.concat(h);
-      s.concat(" %\t");
-      s.concat("Temperature: ");
-      s.concat(t);
-      s.concat(" *C");
-      log(s.c_str());
-      *prev_t = t;
-      *prev_h = h;
-    }
+  s.concat(h);
+  s.concat(" %\t");
+  s.concat(t);
+  s.concat(" *C");
+  return s;
+}
+
+bool checkDiff(float* prev_h, float* prev_t, float h, float t) {
+  // check if returns are valid, if they are NaN (not a number) then something went wrong!
+  if (hasDelta(*prev_t, t, 0.5) || hasDelta(*prev_h, h, 0.5)) {
+    *prev_t = t;
+    *prev_h = h;
+    return true;
   }
+  return false;
 }
 
 void loop() {
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  readSensor(&dht1_h, &dht1_t, dht1.readHumidity(), dht1.readTemperature(), "Smakn DHT21 AM2301");
-  readSensor(&dht2_h, &dht2_t, dht2.readHumidity(), dht2.readTemperature(), "SMAKN DHT22 AM2302");
+  float h = dht1.readHumidity();
+  if (isnan(h)) {
+    h = 0.0;
+  }
+  float t = dht1.readTemperature();
+  if (isnan(t)) {
+    t = 0.0;
+  }
+  String s1 = "";
+  bool b1 = checkDiff(&dht1_h, &dht1_t, h, t);
+  s1.concat(buildString("Smakn DHT21 AM2301", h, t));
+  h = dht2.readHumidity();
+  if (isnan(h)) {
+    h = 0.0;
+  }
+  t = dht2.readTemperature();
+  if (isnan(t)) {
+    t = 0.0;
+  }
+  bool b2 = checkDiff(&dht2_h, &dht2_t, h, t);
+  s1.concat("\t");
+  s1.concat(buildString("SMAKN DHT22 AM2302", h, t));
+  if (b1 || b2) {
+    log(s1.c_str());
+  }
 }
 
