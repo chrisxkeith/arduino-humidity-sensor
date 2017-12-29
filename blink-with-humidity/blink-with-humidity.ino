@@ -284,9 +284,9 @@ String buildString(String sensor_name, float h, float t) {
   return s;
 }
 
-bool checkDiff(float* prev_h, float* prev_t, float h, float t) {
+bool checkDiff(float* prev_h, float* prev_t, float h, float t, float d) {
   // check if returns are valid, if they are NaN (not a number) then something went wrong!
-  if (hasDelta(*prev_t, t, 0.5) || hasDelta(*prev_h, h, 0.5)) {
+  if (hasDelta(*prev_t, t, d) || hasDelta(*prev_h, h, d)) {
     *prev_t = t;
     *prev_h = h;
     return true;
@@ -306,7 +306,7 @@ void loop() {
     t = 0.0;
   }
   String s1 = "";
-  bool b1 = checkDiff(&dht1_h, &dht1_t, h, t);
+  bool b1 = checkDiff(&dht1_h, &dht1_t, h, t, 1.0);
   s1.concat(buildString("Smakn DHT21 AM2301", h, t));
   h = dht2.readHumidity();
   if (isnan(h)) {
@@ -316,7 +316,7 @@ void loop() {
   if (isnan(t)) {
     t = 0.0;
   }
-  bool b2 = checkDiff(&dht2_h, &dht2_t, h, t);
+  bool b2 = checkDiff(&dht2_h, &dht2_t, h, t, 1.0);
   s1.concat("\t");
   s1.concat(buildString("SMAKN DHT22 AM2302", h, t));
   if (b1 || b2) {
