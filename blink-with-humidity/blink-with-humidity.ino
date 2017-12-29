@@ -285,9 +285,9 @@ String buildString(String sensor_name, float h, float t) {
   String s = sensor_name;
   s.concat("\t");
   s.concat(h);
-  s.concat(" %\t");
+  s.concat("\t%\t");
   s.concat(t);
-  s.concat(" *C");
+  s.concat("\t*C");
   return s;
 }
 
