@@ -300,7 +300,17 @@ bool checkDiff(float* prev_h, float* prev_t, float h, float t, float d) {
   return false;
 }
 
+unsigned long lastRead = 0;
+bool first = true;
 void loop() {
+  unsigned long now = millis();
+  if (!first && (now - lastRead < 5000)) {
+    return;
+  }
+  lastRead = now;
+  if (first) {
+    first = false;
+  }
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = dht1.readHumidity();
