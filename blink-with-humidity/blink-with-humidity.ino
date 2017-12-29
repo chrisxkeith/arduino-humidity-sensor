@@ -20,6 +20,11 @@ void log(const char* message) {
     Particle.publish("", message, 1, PRIVATE);
 }
 #else
+// Power breadboard (5V) from Arduino, direct to breadboard doesn't seem to work?
+
+// To change timestamps to something useful (close to actual time).
+// Must manually change before each upload. See /ms-since-midnight.sh file that calculates this value.
+  unsigned long msDayOffset = 59399000;
 
   unsigned long minSecToMillis(unsigned long minutes, unsigned long seconds) {
     return (minutes * 60 * 1000) + (seconds * 1000);
@@ -32,7 +37,9 @@ void log(const char* message) {
   unsigned long previousLogTime = MAX_UNSIGNED_LONG;
 
   char* toFormattedInterval(unsigned long i) {
+    i += msDayOffset;
     unsigned long hours = i / minSecToMillis(60, 0);
+    hours = hours % 24;
     unsigned long remainder = i % minSecToMillis(60, 0);
     unsigned long minutes = remainder / minSecToMillis(1, 0);
     remainder = remainder % minSecToMillis(1, 0);
@@ -285,7 +292,6 @@ String buildString(String sensor_name, float h, float t) {
 }
 
 bool checkDiff(float* prev_h, float* prev_t, float h, float t, float d) {
-  // check if returns are valid, if they are NaN (not a number) then something went wrong!
   if (hasDelta(*prev_t, t, d) || hasDelta(*prev_h, h, d)) {
     *prev_t = t;
     *prev_h = h;
