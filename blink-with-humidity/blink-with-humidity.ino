@@ -24,7 +24,10 @@ void log(const char* message) {
 
 // To change timestamps to something useful (close to actual time).
 // Must manually change before each upload. See /ms-since-midnight.sh file that calculates this value.
-  unsigned long msDayOffset = 59399000;
+  unsigned long msDayOffset = 25835000;
+  unsigned int theYear = 2017;
+  unsigned int theMonth = 12;
+  unsigned int theDay = 30;
 
   unsigned long minSecToMillis(unsigned long minutes, unsigned long seconds) {
     return (minutes * 60 * 1000) + (seconds * 1000);
@@ -37,14 +40,17 @@ void log(const char* message) {
   unsigned long previousLogTime = MAX_UNSIGNED_LONG;
 
   char* toFormattedInterval(unsigned long i) {
-    i += msDayOffset;
     unsigned long hours = i / minSecToMillis(60, 0);
+    if (hours >= 24) {
+      theDay++; // TODO : month and year may be wrong...
+    }
     hours = hours % 24;
     unsigned long remainder = i % minSecToMillis(60, 0);
     unsigned long minutes = remainder / minSecToMillis(1, 0);
     remainder = remainder % minSecToMillis(1, 0);
     unsigned long seconds = remainder / minSecToMillis(0, 1);
-    snprintf(gMessage, MAX_MESSAGE_SIZE, "%02i:%02i:%02i", (int)hours, (int)minutes, (int)seconds);
+    snprintf(gMessage, MAX_MESSAGE_SIZE, "%04i/%02i/%02i %02i:%02i:%02i",
+                        theYear, theMonth, theDay, (int)hours, (int)minutes, (int)seconds);
     return gMessage;
   }
 
@@ -57,7 +63,7 @@ void log(const char* message) {
       }
       previousLogTime = millis();
       snprintf(logLine, MAX_MESSAGE_SIZE, "%s\t%s",
-              toFormattedInterval(previousLogTime), message);
+              toFormattedInterval(previousLogTime + msDayOffset), message);
       Serial.println(logLine);
   }
 #endif
@@ -265,52 +271,7 @@ DHT dht2(7, DHT22);
 float dht2_h = -2000.0;
 float dht2_t = -2000.0;
 
-void setup() {
-  Serial.begin(9600);
-  dht1.begin();
-  dht2.begin();
-}
-
-bool hasDelta(float a, float b, float delta) {
-  if (isnan(a) && !isnan(b)) {
-    return true;
-  }
-  if (!isnan(a) && isnan(b)) {
-    return true;
-  }
-  return (abs(a - b) > delta);
-}
-
-String buildString(String sensor_name, float h, float t) {
-  String s = sensor_name;
-  s.concat("\t");
-  s.concat(h);
-  s.concat("\t%\t");
-  s.concat(t);
-  s.concat("\t*C");
-  return s;
-}
-
-bool checkDiff(float* prev_h, float* prev_t, float h, float t, float d) {
-  if (hasDelta(*prev_t, t, d) || hasDelta(*prev_h, h, d)) {
-    *prev_t = t;
-    *prev_h = h;
-    return true;
-  }
-  return false;
-}
-
-unsigned long lastRead = 0;
-bool first = true;
-void loop() {
-  unsigned long now = millis();
-  if (!first && (now - lastRead < 5000)) {
-    return;
-  }
-  lastRead = now;
-  if (first) {
-    first = false;
-  }
+void doRead() {
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float h = dht1.readHumidity();
@@ -323,7 +284,7 @@ void loop() {
   }
   String s1 = "";
   bool b1 = checkDiff(&dht1_h, &dht1_t, h, t, 1.0);
-  s1.concat(buildString("Smakn DHT21 AM2301", h, t));
+  s1.concat(buildString(h, t));
   h = dht2.readHumidity();
   if (isnan(h)) {
     h = 0.0;
@@ -334,9 +295,49 @@ void loop() {
   }
   bool b2 = checkDiff(&dht2_h, &dht2_t, h, t, 1.0);
   s1.concat("\t");
-  s1.concat(buildString("SMAKN DHT22 AM2302", h, t));
+  s1.concat(buildString(h, t));
   if (b1 || b2) {
     log(s1.c_str());
   }
+}
+
+void setup() {
+  Serial.begin(9600);
+  dht1.begin();
+  dht2.begin();
+  log("Smakn DHT21 AM2301\t\tSMAKN DHT22 AM2302");
+  log("humidity (%)\ttemp (*C)\thumidity (%)\ttemp (*C)");
+  doRead();
+}
+
+bool hasDelta(float a, float b, float delta) {
+  if (isnan(a) && !isnan(b)) {
+    return true;
+  }
+  if (!isnan(a) && isnan(b)) {
+    return true;
+  }
+  return (abs(a - b) > delta);
+}
+
+String buildString(float h, float t) {
+  String s = "";
+  s.concat(h);
+  s.concat("\t");
+  s.concat(t);
+  return s;
+}
+
+bool checkDiff(float* prev_h, float* prev_t, float h, float t, float d) {
+  if (hasDelta(*prev_t, t, d) || hasDelta(*prev_h, h, d)) {
+    *prev_t = t;
+    *prev_h = h;
+    return true;
+  }
+  return false;
+}
+
+void loop() {
+  doRead();
 }
 
