@@ -275,29 +275,33 @@ float dht2_t = -2000.0;
 void doRead() {
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float h = dht1.readHumidity();
-  if (isnan(h)) {
-    h = 0.0;
+  float h1 = dht1.readHumidity();
+  if (isnan(h1)) {
+    h1 = 0.0;
   }
-  float t = dht1.readTemperature();
-  if (isnan(t)) {
-    t = 0.0;
+  float t1 = dht1.readTemperature();
+  if (isnan(t1)) {
+    t1 = 0.0;
   }
   String s1 = "";
-  bool b1 = checkDiff(&dht1_h, &dht1_t, h, t, 1.0);
-  s1.concat(buildString(h, t));
-  h = dht2.readHumidity();
-  if (isnan(h)) {
-    h = 0.0;
+  bool b1 = checkDiff(dht1_h, dht1_t, h1, t1, 1.0);
+  s1.concat(buildString(h1, t1));
+  float h2 = dht2.readHumidity();
+  if (isnan(h2)) {
+    h2 = 0.0;
   }
-  t = dht2.readTemperature();
-  if (isnan(t)) {
-    t = 0.0;
+  float t2 = dht2.readTemperature();
+  if (isnan(t2)) {
+    t2 = 0.0;
   }
-  bool b2 = checkDiff(&dht2_h, &dht2_t, h, t, 1.0);
+  bool b2 = checkDiff(dht2_h, dht2_t, h2, t2, 1.0);
   s1.concat("\t");
-  s1.concat(buildString(h, t));
+  s1.concat(buildString(h2, t2));
   if (b1 || b2) {
+    dht1_h = h1;
+    dht1_t = t1;
+    dht2_h = h2;
+    dht2_t = t2;
     log(s1.c_str());
   }
 }
@@ -311,20 +315,24 @@ void setup() {
   doRead();
 }
 
-bool hasDelta(float a, float b, float delta) {
-  if (isnan(a) && !isnan(b)) {
+bool hasDelta(float prev, float curr, float delta) {
+  String s = "Diff data: ";
+  if (isnan(prev) && !isnan(curr)) {
+    s.concat("isnan(prev)");
+    log(s.c_str());
     return true;
   }
-  if (!isnan(a) && isnan(b)) {
+  if (!isnan(prev) && isnan(curr)) {
+    s.concat("isnan(b)");
+    log(s.c_str());
     return true;
   }
-  float diff = abs(a - b);
+  float diff = abs(prev - curr);
   if (diff > delta) {
-    String s = "Diff data: ";
-    s.concat(" a: ");
-    s.concat(a);
-    s.concat(", b: ");
-    s.concat(b);
+    s.concat(" prev: ");
+    s.concat(prev);
+    s.concat(", curr: ");
+    s.concat(curr);
     s.concat(", delta: ");
     s.concat(delta);
     s.concat(", diff: ");
@@ -343,13 +351,8 @@ String buildString(float h, float t) {
   return s;
 }
 
-bool checkDiff(float* prev_h, float* prev_t, float h, float t, float d) {
-  if (hasDelta(*prev_t, t, d) || hasDelta(*prev_h, h, d)) {
-    *prev_t = t;
-    *prev_h = h;
-    return true;
-  }
-  return false;
+bool checkDiff(float prev_h, float prev_t, float h, float t, float d) {
+  return (hasDelta(prev_t, t, d) || hasDelta(prev_h, h, d));
 }
 
 void doHeartbeat() {
