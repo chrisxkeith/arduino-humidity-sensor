@@ -28,10 +28,10 @@ void log(const char* message) {
 
 // To change timestamps to something useful (close to actual time).
 // Must manually change before each upload. See /ms-since-midnight.sh file that calculates this value.
-  unsigned long msDayOffset = 28164000;
-  unsigned int theYear = 2017;
-  unsigned int theMonth = 12;
-  unsigned int theDay = 31;
+  unsigned long msDayOffset = 25775000;
+  unsigned int theYear = 2018;
+  unsigned int theMonth = 1;
+  unsigned int theDay = 1;
   unsigned long lastHeartbeat = 0;
 
   const long MAX_LONG = 2147483647;
@@ -272,8 +272,6 @@ DHT dht2(7, DHT22);
 float dht2_h = -2000.0;
 float dht2_t = -2000.0;
 
-float diff = -2000.0;
-
 void doRead() {
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
@@ -300,8 +298,6 @@ void doRead() {
   s1.concat("\t");
   s1.concat(buildString(h, t));
   if (b1 || b2) {
-    s1.concat("\t");
-    s1.concat(diff);
     log(s1.c_str());
   }
 }
@@ -311,7 +307,7 @@ void setup() {
   dht1.begin();
   dht2.begin();
   log("Smakn DHT21 AM2301\t\tSMAKN DHT22 AM2302");
-  log("humidity (%)\ttemp (*C)\thumidity (%)\ttemp (*C)\tdiff");
+  log("humidity (%)\ttemp (*C)\thumidity (%)\ttemp (*C)");
   doRead();
 }
 
@@ -322,8 +318,21 @@ bool hasDelta(float a, float b, float delta) {
   if (!isnan(a) && isnan(b)) {
     return true;
   }
-  diff = abs(a - b);
-  return (diff > delta);
+  float diff = abs(a - b);
+  if (diff > delta) {
+    String s = "Diff data: ";
+    s.concat(" a: ");
+    s.concat(a);
+    s.concat(", b: ");
+    s.concat(b);
+    s.concat(", delta: ");
+    s.concat(delta);
+    s.concat(", diff: ");
+    s.concat(diff);
+    log(s.c_str());
+    return true;
+  }
+  return false;
 }
 
 String buildString(float h, float t) {
@@ -345,8 +354,12 @@ bool checkDiff(float* prev_h, float* prev_t, float h, float t, float d) {
 
 void doHeartbeat() {
   unsigned long now = millis();
+  unsigned int heartInterval = 1;
   if (now > lastHeartbeat + minSecToMillis(60, 0)) {
-    log("Hourly heartbeat");
+    String s = "";
+    s.concat(60);
+    s.concat(" minute heartbeat.");
+    log(s.c_str());
     lastHeartbeat = now;
   }
 }
