@@ -337,7 +337,7 @@ bool hasDelta(float prev, float curr, float delta) {
     s.concat(delta);
     s.concat(", diff: ");
     s.concat(diff);
-    log(s.c_str());
+//    log(s.c_str());
     return true;
   }
   return false;
