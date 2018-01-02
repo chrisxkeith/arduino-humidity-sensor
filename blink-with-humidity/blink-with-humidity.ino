@@ -28,7 +28,7 @@ void log(const char* message) {
 
 // To change timestamps to something useful (close to actual time).
 // Must manually change before each upload. See /ms-since-midnight.sh file that calculates this value.
-  unsigned long msDayOffset = 52958000;
+  unsigned long msDayOffset = 32877000;
   unsigned int theYear = 2018;
   unsigned int theMonth = 1;
   unsigned int theDay = 1;
