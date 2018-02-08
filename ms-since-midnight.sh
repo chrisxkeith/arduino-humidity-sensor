@@ -1,5 +1,5 @@
 set -x
-#
+
 h=`date +%H`
 m=`date +%M`
 s=`date +%S`
