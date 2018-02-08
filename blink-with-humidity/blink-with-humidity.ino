@@ -28,10 +28,10 @@ void log(const char* message) {
 
 // To change timestamps to something useful (close to actual time).
 // Must manually change before each upload. See /ms-since-midnight.sh file that calculates this value.
-  unsigned long msDayOffset = 32877000;
+  unsigned long msDayOffset = 26056000;
   unsigned int theYear = 2018;
   unsigned int theMonth = 1;
-  unsigned int theDay = 1;
+  unsigned int theDay = 3;
   unsigned long lastHeartbeat = 0;
 
   const long MAX_LONG = 2147483647;
@@ -289,7 +289,7 @@ void doRead() {
     dht1_h = h1;
     dht1_t = t1;
   }
-  s1.concat(buildString(dht1_h, dht1_t));  
+  s1.concat(buildString(dht1_h, dht1_t));
   float h2 = dht2.readHumidity();
   if (isnan(h2)) {
     h2 = 0.0;
